@@ -1,14 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized(); // 確保 Flutter 正確初始化
+  await dotenv.load(fileName: ".env"); // 加載 .env 文件
   runApp(const MyApp());
 }
+
+// 使用 API Key
+final apiKey = dotenv.env['GOOGLE_MAPS_API_KEY'] ?? ''; // 從環境變數讀取 API Key
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -21,29 +26,22 @@ class MyApp extends StatelessWidget {
   }
 }
 
-class MapScreen extends StatefulWidget{
+class MapScreen extends StatefulWidget {
   @override
   _MapScreenState createState() => _MapScreenState();
 }
-
-
-
-// GoogleMap 用來渲染Google地圖
-// initialCameraPosition 設定初始的經緯度和縮放級別
-// _onMapCreated 是地圖初始化的回調函式
-
 
 class _MapScreenState extends State<MapScreen> {
   late GoogleMapController mapController;
 
   final LatLng _center = const LatLng(25.0330, 121.5654); // 台北101
 
-  void _onMapCreated(GoogleMapController controller){
+  void _onMapCreated(GoogleMapController controller) {
     mapController = controller;
   }
 
   @override
-  Widget build(BuildContext context){
+  Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: Text('等一下是要吃什麼'),
@@ -57,6 +55,4 @@ class _MapScreenState extends State<MapScreen> {
       ),
     );
   }
-
-
 }
