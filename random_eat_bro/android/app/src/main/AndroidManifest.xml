@@ -5,6 +5,10 @@
         android:label="random_eat_bro"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
+        <meta-data
+            android:name="com.google.android.geo.API_KEY"
+            android:value="AIzaSyBKri0k5LuF8u5DgWa7usRm_FZFSJKtKA8" />
+
         <activity
             android:name=".MainActivity"
             android:exported="true"

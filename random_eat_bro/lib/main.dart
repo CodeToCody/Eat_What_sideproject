@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:geolocator/geolocator.dart';
 
 void main() {
@@ -11,75 +12,84 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return const MaterialApp(
-      home: LocationScreen(),
+      home: MapScreen(),
     );
   }
 }
 
-class LocationScreen extends StatefulWidget {
-  const LocationScreen({super.key});
+class MapScreen extends StatefulWidget {
+  const MapScreen({super.key});
 
   @override
-  State<LocationScreen> createState() => _LocationScreenState();
+  State<MapScreen> createState() => _MapScreenState();
 }
 
-class _LocationScreenState extends State<LocationScreen> {
-  String _location = "尚未取得定位";
+class _MapScreenState extends State<MapScreen> {
+  GoogleMapController? _mapController;
+  LatLng? _currentLatLng;
 
-  Future<void> _getLocation() async {
-    bool serviceEnabled;
-    LocationPermission permission;
+  @override
+  void initState() {
+    super.initState();
+    _getCurrentLocation();
+  }
 
-    serviceEnabled = await Geolocator.isLocationServiceEnabled();
+  Future<void> _getCurrentLocation() async {
+    bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
     if (!serviceEnabled) {
-      setState(() {
-        _location = '定位服務未開啟';
-      });
+      debugPrint('定位服務未開啟');
       return;
     }
 
-    permission = await Geolocator.checkPermission();
+    LocationPermission permission = await Geolocator.checkPermission();
     if (permission == LocationPermission.denied) {
       permission = await Geolocator.requestPermission();
       if (permission == LocationPermission.denied) {
-        setState(() {
-          _location = '使用者拒絕權限';
-        });
+        debugPrint('權限被拒絕');
         return;
       }
     }
 
     if (permission == LocationPermission.deniedForever) {
-      setState(() {
-        _location = '權限被永久拒絕';
-      });
+      debugPrint('權限被永久拒絕');
       return;
     }
 
     Position position = await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.high);
+      desiredAccuracy: LocationAccuracy.high,
+    );
+
     setState(() {
-      _location = '位置：${position.latitude}, ${position.longitude}';
+      _currentLatLng = LatLng(position.latitude, position.longitude);
     });
+
+    _mapController?.animateCamera(CameraUpdate.newLatLngZoom(_currentLatLng!, 15));
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("隨機吃啥哥")),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(_location),
-            const SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: _getLocation,
-              child: const Text("取得目前位置"),
+      appBar: AppBar(title: const Text("你的位置在這")),
+      body: _currentLatLng == null
+          ? const Center(child: CircularProgressIndicator())
+          : GoogleMap(
+              initialCameraPosition: CameraPosition(
+                target: _currentLatLng!,
+                zoom: 15,
+              ),
+              markers: {
+                Marker(
+                  markerId: const MarkerId("currentLocation"),
+                  position: _currentLatLng!,
+                  infoWindow: const InfoWindow(title: "目前位置"),
+                ),
+              },
+              onMapCreated: (controller) {
+                _mapController = controller;
+              },
+              myLocationEnabled: true,
+              myLocationButtonEnabled: true,
             ),
-          ],
-        ),
-      ),
     );
   }
 }
